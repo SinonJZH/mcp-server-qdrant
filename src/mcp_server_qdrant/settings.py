@@ -12,7 +12,19 @@ DEFAULT_TOOL_FIND_DESCRIPTION = (
     "Look up memories in Qdrant. Use this tool when you need to: \n"
     " - Find memories by their content \n"
     " - Access memories for further analysis \n"
-    " - Get some personal information about the user"
+    " - Get some personal information about the user \n"
+    "Each result includes the point ID and the similarity score of the entry; "
+    "pass the point ID to qdrant-update or qdrant-delete to maintain existing memories."
+)
+DEFAULT_TOOL_UPDATE_DESCRIPTION = (
+    "Update an existing memory in place, identified by its point ID (as returned by "
+    "qdrant-find). The content is re-embedded with the configured embedding model and "
+    "the point keeps its ID. Nothing is changed if the point ID does not exist."
+)
+DEFAULT_TOOL_DELETE_DESCRIPTION = (
+    "Delete memories from Qdrant, identified by their point IDs (as returned by "
+    "qdrant-find). Deletion is irreversible: always confirm with the user before "
+    "calling this tool, and only pass point IDs that appeared in qdrant-find results."
 )
 
 METADATA_PATH = "metadata"
@@ -30,6 +42,14 @@ class ToolSettings(BaseSettings):
     tool_find_description: str = Field(
         default=DEFAULT_TOOL_FIND_DESCRIPTION,
         validation_alias="TOOL_FIND_DESCRIPTION",
+    )
+    tool_update_description: str = Field(
+        default=DEFAULT_TOOL_UPDATE_DESCRIPTION,
+        validation_alias="TOOL_UPDATE_DESCRIPTION",
+    )
+    tool_delete_description: str = Field(
+        default=DEFAULT_TOOL_DELETE_DESCRIPTION,
+        validation_alias="TOOL_DELETE_DESCRIPTION",
     )
 
 

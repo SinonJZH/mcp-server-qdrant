@@ -236,3 +236,112 @@ async def test_nonexistent_collection_search(qdrant_connector):
 
     # Verify results
     assert len(results) == 0
+
+
+@pytest.mark.asyncio
+async def test_search_returns_point_id_and_score(qdrant_connector):
+    """Search results must carry the point ID and the similarity score."""
+    await qdrant_connector.store(
+        Entry(content="The quick brown fox jumps over the lazy dog")
+    )
+
+    results = await qdrant_connector.search("fox jumps")
+
+    assert len(results) == 1
+    assert results[0].id is not None
+    assert results[0].score is not None
+
+
+@pytest.mark.asyncio
+async def test_update_entry(qdrant_connector):
+    """Updating an entry replaces content/metadata in place, keeping the point ID."""
+    await qdrant_connector.store(
+        Entry(content="Old content about nginx", metadata={"topic": "web"})
+    )
+    results = await qdrant_connector.search("nginx")
+    point_id = results[0].id
+
+    updated = await qdrant_connector.update(
+        Entry(
+            content="New content about nginx", metadata={"topic": "web", "version": 2}
+        ),
+        point_id=point_id,
+    )
+    assert updated is True
+
+    results_after = await qdrant_connector.search("nginx")
+    assert len(results_after) == 1  # the point was updated in place, not duplicated
+    assert results_after[0].id == point_id
+    assert results_after[0].content == "New content about nginx"
+    assert results_after[0].metadata == {"topic": "web", "version": 2}
+
+
+@pytest.mark.asyncio
+async def test_update_nonexistent_point(qdrant_connector):
+    """Updating a point ID that doesn't exist must not create a new point."""
+    await qdrant_connector.store(Entry(content="Some content"))
+
+    updated = await qdrant_connector.update(
+        Entry(content="New content"), point_id=str(uuid.uuid4())
+    )
+
+    assert updated is False
+    assert len(await qdrant_connector.search("content")) == 1
+
+
+@pytest.mark.asyncio
+async def test_update_nonexistent_collection(qdrant_connector):
+    """Updating in a collection that doesn't exist returns False."""
+    updated = await qdrant_connector.update(
+        Entry(content="New content"),
+        point_id=str(uuid.uuid4()),
+        collection_name=f"nonexistent_{uuid.uuid4().hex}",
+    )
+
+    assert updated is False
+
+
+@pytest.mark.asyncio
+async def test_delete_entries(qdrant_connector):
+    """Deleting by point ID removes exactly the targeted points."""
+    await qdrant_connector.store(Entry(content="First entry to delete"))
+    await qdrant_connector.store(Entry(content="Second entry to keep"))
+
+    results = await qdrant_connector.search("entry")
+    target = next(r for r in results if r.content == "First entry to delete")
+
+    deleted, missing = await qdrant_connector.delete([target.id])
+
+    assert missing == []
+    assert len(deleted) == 1
+    assert deleted[0].content == "First entry to delete"
+
+    remaining = await qdrant_connector.search("entry")
+    assert len(remaining) == 1
+    assert remaining[0].content == "Second entry to keep"
+
+
+@pytest.mark.asyncio
+async def test_delete_reports_missing_ids(qdrant_connector):
+    """IDs that don't exist are reported as missing instead of failing silently."""
+    await qdrant_connector.store(Entry(content="Entry that exists"))
+    results = await qdrant_connector.search("exists")
+    existing_id = results[0].id
+    missing_id = str(uuid.uuid4())
+
+    deleted, missing = await qdrant_connector.delete([existing_id, missing_id])
+
+    assert [entry.id for entry in deleted] == [existing_id]
+    assert missing == [missing_id]
+    assert len(await qdrant_connector.search("exists")) == 0
+
+
+@pytest.mark.asyncio
+async def test_delete_nonexistent_collection(qdrant_connector):
+    """Deleting from a collection that doesn't exist reports all IDs as missing."""
+    deleted, missing = await qdrant_connector.delete(
+        [str(uuid.uuid4())], collection_name=f"nonexistent_{uuid.uuid4().hex}"
+    )
+
+    assert deleted == []
+    assert len(missing) == 1

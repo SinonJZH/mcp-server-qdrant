@@ -82,8 +82,15 @@ class QdrantMCPServer(FastMCP):
         """
         Feel free to override this method in your subclass to customize the format of the entry.
         """
+        entry_id = f"<id>{entry.id}</id>" if entry.id else ""
+        entry_score = (
+            f"<score>{entry.score:.4f}</score>" if entry.score is not None else ""
+        )
         entry_metadata = json.dumps(entry.metadata) if entry.metadata else ""
-        return f"<entry><content>{entry.content}</content><metadata>{entry_metadata}</metadata></entry>"
+        return (
+            f"<entry>{entry_id}{entry_score}"
+            f"<content>{entry.content}</content><metadata>{entry_metadata}</metadata></entry>"
+        )
 
     def setup_tools(self):
         """
@@ -164,8 +171,111 @@ class QdrantMCPServer(FastMCP):
                 content.append(self.format_entry(entry))
             return content
 
+        async def update(
+            ctx: Context,
+            point_id: Annotated[
+                str,
+                Field(
+                    description="The point ID of the entry to update, as returned by qdrant-find"
+                ),
+            ],
+            information: Annotated[
+                str, Field(description="The new text content of the entry")
+            ],
+            collection_name: Annotated[
+                str, Field(description="The collection the entry belongs to")
+            ],
+            # The `metadata` parameter is defined as non-optional, but it can be None.
+            # If we set it to be optional, some of the MCP clients, like Cursor, cannot
+            # handle the optional parameter correctly.
+            metadata: Annotated[
+                Metadata | None,
+                Field(
+                    description="New metadata to store along with the entry. Any json is accepted. Replaces any previously stored metadata."
+                ),
+            ] = None,
+        ) -> str:
+            """
+            Update an existing entry in Qdrant in place, identified by its point ID.
+            The entry content is re-embedded with the configured embedding model and
+            the point keeps its ID. Nothing is changed if the point ID does not exist.
+            :param ctx: The context for the request.
+            :param point_id: The point ID of the entry to update.
+            :param information: The new text content of the entry.
+            :param collection_name: The name of the collection the entry belongs to, optional. If not provided,
+                                    the default collection is used.
+            :param metadata: New JSON metadata to store with the entry, optional.
+            :return: A message indicating whether the entry was updated.
+            """
+            await ctx.debug(f"Updating entry {point_id} in Qdrant")
+
+            entry = Entry(content=information, metadata=metadata)
+
+            updated = await self.qdrant_connector.update(
+                entry, point_id=point_id, collection_name=collection_name
+            )
+            if not updated:
+                return (
+                    f"Nothing was updated: point {point_id} was not found in "
+                    f"collection {collection_name}. Use qdrant-find to get valid point IDs."
+                )
+            return f"Updated: {point_id} in collection {collection_name}"
+
+        async def delete(
+            ctx: Context,
+            point_ids: Annotated[
+                list[str],
+                Field(
+                    description="The point ID(s) of the entries to delete, as returned by qdrant-find"
+                ),
+            ],
+            collection_name: Annotated[
+                str, Field(description="The collection the entries belong to")
+            ],
+        ) -> str:
+            """
+            Delete entries from Qdrant, identified by their point IDs. Deletion is
+            irreversible, so confirm with the user before calling this tool. The
+            deleted entries' content is returned for verification.
+            :param ctx: The context for the request.
+            :param point_ids: The point IDs of the entries to delete.
+            :param collection_name: The name of the collection the entries belong to, optional. If not provided,
+                                    the default collection is used.
+            :return: A message listing the deleted entries and any IDs that were not found.
+            """
+            await ctx.debug(f"Deleting entries {point_ids} from Qdrant")
+
+            deleted_entries, missing_ids = await self.qdrant_connector.delete(
+                point_ids, collection_name=collection_name
+            )
+            lines: list[str] = []
+            if deleted_entries:
+                count = len(deleted_entries)
+                lines.append(
+                    f"Deleted {count} {'entry' if count == 1 else 'entries'} "
+                    f"from collection {collection_name}:"
+                )
+                for entry in deleted_entries:
+                    preview = entry.content[:100] + (
+                        "..." if len(entry.content) > 100 else ""
+                    )
+                    lines.append(f"  - {entry.id}: {preview}")
+            if missing_ids:
+                lines.append(
+                    f"No point found for ID(s) {', '.join(missing_ids)} "
+                    f"in collection {collection_name}; nothing was deleted for them."
+                )
+            if not lines:
+                return (
+                    f"Nothing was deleted: none of the given point IDs exist in "
+                    f"collection {collection_name}."
+                )
+            return "\n".join(lines)
+
         find_foo = find
         store_foo = store
+        update_foo = update
+        delete_foo = delete
 
         filterable_conditions = (
             self.qdrant_settings.filterable_fields_dict_with_conditions()
@@ -183,6 +293,12 @@ class QdrantMCPServer(FastMCP):
             store_foo = make_partial_function(
                 store_foo, {"collection_name": self.qdrant_settings.collection_name}
             )
+            update_foo = make_partial_function(
+                update_foo, {"collection_name": self.qdrant_settings.collection_name}
+            )
+            delete_foo = make_partial_function(
+                delete_foo, {"collection_name": self.qdrant_settings.collection_name}
+            )
 
         self.tool(
             find_foo,
@@ -196,4 +312,14 @@ class QdrantMCPServer(FastMCP):
                 store_foo,
                 name="qdrant-store",
                 description=self.tool_settings.tool_store_description,
+            )
+            self.tool(
+                update_foo,
+                name="qdrant-update",
+                description=self.tool_settings.tool_update_description,
+            )
+            self.tool(
+                delete_foo,
+                name="qdrant-delete",
+                description=self.tool_settings.tool_delete_description,
             )

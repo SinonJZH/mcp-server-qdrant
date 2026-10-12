@@ -21,6 +21,10 @@ class Entry(BaseModel):
 
     content: str
     metadata: Metadata | None = None
+    # Populated on search results: the Qdrant point ID and the similarity score.
+    # Used as a handle for update/delete operations.
+    id: str | None = None
+    score: float | None = None
 
 
 class QdrantConnector:
@@ -131,11 +135,91 @@ class QdrantConnector:
 
         return [
             Entry(
+                id=str(result.id),
                 content=result.payload["document"],
                 metadata=result.payload.get("metadata"),
+                score=result.score,
             )
             for result in search_results.points
         ]
+
+    async def update(
+        self, entry: Entry, *, point_id: str, collection_name: str | None = None
+    ) -> bool:
+        """
+        Update an existing point in place, identified by its point ID, with new
+        content and metadata. The new content is embedded with the configured
+        embedding provider, and the point keeps its ID.
+        :param entry: The new content and metadata for the point.
+        :param point_id: The ID of the point to update.
+        :param collection_name: The name of the collection to update the point in, optional. If not provided,
+                                the default collection is used.
+        :return: True if the point was updated, False if the collection or the point was not found.
+        """
+        collection_name = collection_name or self._default_collection_name
+        assert collection_name is not None
+        if not await self._client.collection_exists(collection_name):
+            return False
+
+        # Only update points that actually exist; never create a new point under a foreign ID
+        existing_points = await self._client.retrieve(collection_name, ids=[point_id])
+        if not existing_points:
+            return False
+
+        embeddings = await self._embedding_provider.embed_documents([entry.content])
+        vector_name = self._embedding_provider.get_vector_name()
+        payload = {"document": entry.content, METADATA_PATH: entry.metadata}
+        await self._client.upsert(
+            collection_name=collection_name,
+            points=[
+                models.PointStruct(
+                    id=point_id,
+                    vector={vector_name: embeddings[0]},
+                    payload=payload,
+                )
+            ],
+        )
+        return True
+
+    async def delete(
+        self, point_ids: list[str], *, collection_name: str | None = None
+    ) -> tuple[list[Entry], list[str]]:
+        """
+        Delete points by their IDs from the Qdrant collection.
+        :param point_ids: The IDs of the points to delete.
+        :param collection_name: The name of the collection to delete the points from, optional. If not provided,
+                                the default collection is used.
+        :return: A tuple of (the entries that were deleted, the IDs that were not found).
+        """
+        collection_name = collection_name or self._default_collection_name
+        assert collection_name is not None
+        if not await self._client.collection_exists(collection_name):
+            return [], list(point_ids)
+
+        # Retrieve the points first so the caller can report exactly what was removed
+        existing_points = await self._client.retrieve(
+            collection_name, ids=point_ids, with_payload=True
+        )
+        found_ids = {str(point.id) for point in existing_points}
+        missing_ids = [point_id for point_id in point_ids if point_id not in found_ids]
+
+        if existing_points:
+            await self._client.delete(
+                collection_name=collection_name,
+                points_selector=models.PointIdsList(
+                    points=[point.id for point in existing_points]
+                ),
+            )
+
+        deleted_entries = [
+            Entry(
+                id=str(point.id),
+                content=point.payload.get("document", "") if point.payload else "",
+                metadata=point.payload.get(METADATA_PATH) if point.payload else None,
+            )
+            for point in existing_points
+        ]
+        return deleted_entries, missing_ids
 
     async def _ensure_collection_exists(self, collection_name: str):
         """

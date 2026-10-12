@@ -32,7 +32,28 @@ It acts as a semantic memory layer on top of the Qdrant database.
      - `query` (string): Query to use for searching
      - `collection_name` (string): Name of the collection to store the information in. This field is required if there are no default collection name.
                                    If there is a default collection name, this field is not enabled.
-   - Returns: Information stored in the Qdrant database as separate messages
+   - Returns: Information stored in the Qdrant database as separate messages. Each result includes
+              the point `id` and the similarity `score`, which are the handles for `qdrant-update` / `qdrant-delete`.
+3. `qdrant-update`
+   - Update an existing entry in place, identified by its point ID. The content is re-embedded with the
+     configured embedding model and the point keeps its ID. Nothing is changed if the point ID does not exist.
+   - Input:
+     - `point_id` (string): Point ID of the entry to update, as returned by `qdrant-find`
+     - `information` (string): New information to store
+     - `metadata` (JSON): Optional new metadata to store (replaces any previously stored metadata)
+     - `collection_name` (string): Name of the collection the entry belongs to. This field is required if there
+                                   are no default collection name. If there is a default collection name, this
+                                   field is not enabled.
+   - Returns: Confirmation message, or a non-destructive notice if the point ID was not found
+4. `qdrant-delete`
+   - Delete entries from the Qdrant database, identified by their point IDs. Deletion is irreversible;
+     always confirm with the user before calling this tool.
+   - Input:
+     - `point_ids` (list of strings): Point IDs of the entries to delete, as returned by `qdrant-find`
+     - `collection_name` (string): Name of the collection the entries belong to. This field is required if there
+                                   are no default collection name. If there is a default collection name, this
+                                   field is not enabled.
+   - Returns: A message listing the deleted entries' content (for verification) and any IDs that were not found
 
 ## Environment Variables
 
@@ -51,8 +72,10 @@ Configuration is done via environment variables. The only command-line argument 
 | `EMBEDDING_MODEL`        | Name of the embedding model to use                                  | `sentence-transformers/all-MiniLM-L6-v2`                          |
 | `TOOL_STORE_DESCRIPTION` | Custom description for the store tool                               | See default in [`settings.py`](src/mcp_server_qdrant/settings.py) |
 | `TOOL_FIND_DESCRIPTION`  | Custom description for the find tool                                | See default in [`settings.py`](src/mcp_server_qdrant/settings.py) |
+| `TOOL_UPDATE_DESCRIPTION` | Custom description for the update tool                             | See default in [`settings.py`](src/mcp_server_qdrant/settings.py) |
+| `TOOL_DELETE_DESCRIPTION` | Custom description for the delete tool                             | See default in [`settings.py`](src/mcp_server_qdrant/settings.py) |
 | `QDRANT_SEARCH_LIMIT`    | Maximum number of results to return from search                     | `10`                                                              |
-| `QDRANT_READ_ONLY`       | Enable read-only mode (disables `qdrant-store` tool)                | `false`                                                           |
+| `QDRANT_READ_ONLY`       | Enable read-only mode (disables the `qdrant-store`, `qdrant-update` and `qdrant-delete` tools) | `false` |
 
 ### FastMCP Environment Variables
 
