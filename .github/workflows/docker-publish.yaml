@@ -6,6 +6,12 @@ on:
     tags: ['v*']
   workflow_dispatch:
 
+concurrency:
+  # Grouped per ref so consecutive master pushes supersede each other,
+  # while v* tag releases are never cancelled by unrelated branch pushes.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
   packages: write
