@@ -2,16 +2,21 @@
 
 中文 | [English](README.en.md)
 
+> [!IMPORTANT]
+> 本仓库是对上游官方仓库 [qdrant/mcp-server-qdrant](https://github.com/qdrant/mcp-server-qdrant)
+> fork 后实现的**功能增强版**。由于官方仓库拒绝加入删除和修改功能，
+> 相关功能（`qdrant-delete` / `qdrant-update`）通过本 fork 仓库实现并发布。
+
 > [Model Context Protocol (MCP)](https://modelcontextprotocol.io/introduction)
 > 是一个开放协议，用于在 LLM 应用与外部数据源、工具之间实现无缝集成。无论你是在构建
 > AI 驱动的 IDE、增强聊天界面，还是创建自定义 AI 工作流，MCP 都提供了一种标准化的方式，
 > 将 LLM 与其所需的上下文连接起来。
 
-本仓库展示了如何为矢量搜索引擎 [Qdrant](https://qdrant.tech/) 创建一个 MCP 服务器。
+本仓库展示了如何为向量搜索引擎 [Qdrant](https://qdrant.tech/) 创建一个 MCP 服务器。
 
 ## 概述
 
-一个官方 Model Context Protocol 服务器，用于在 Qdrant 矢量搜索引擎中保存和检索记忆。
+基于官方 Model Context Protocol 服务器的功能增强版，用于在 Qdrant 向量搜索引擎中保存、检索、更新和删除记忆。
 它在 Qdrant 数据库之上充当一个语义记忆层。
 
 ## 组件
@@ -308,7 +313,7 @@ COLLECTION_NAME=mcp-dev fastmcp dev src/mcp_server_qdrant/server.py
 
 [![Install with UVX in VS Code](https://img.shields.io/badge/VS_Code-UVX-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=qdrant&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22--from%22%2C%22git%2Bhttps%3A%2F%2Fgithub.com%2FSinonJZH%2Fmcp-server-qdrant%22%2C%22mcp-server-qdrant%22%5D%2C%22env%22%3A%7B%22QDRANT_URL%22%3A%22%24%7Binput%3AqdrantUrl%7D%22%2C%22QDRANT_API_KEY%22%3A%22%24%7Binput%3AqdrantApiKey%7D%22%2C%22COLLECTION_NAME%22%3A%22%24%7Binput%3AcollectionName%7D%22%7D%7D&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22qdrantUrl%22%2C%22description%22%3A%22Qdrant+URL%22%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22qdrantApiKey%22%2C%22description%22%3A%22Qdrant+API+Key%22%2C%22password%22%3Atrue%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22collectionName%22%2C%22description%22%3A%22Collection+Name%22%7D%5D) [![Install with UVX in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-UVX-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=qdrant&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22--from%22%2C%22git%2Bhttps%3A%2F%2Fgithub.com%2FSinonJZH%2Fmcp-server-qdrant%22%2C%22mcp-server-qdrant%22%5D%2C%22env%22%3A%7B%22QDRANT_URL%22%3A%22%24%7Binput%3AqdrantUrl%7D%22%2C%22QDRANT_API_KEY%22%3A%22%24%7Binput%3AqdrantApiKey%7D%22%2C%22COLLECTION_NAME%22%3A%22%24%7Binput%3AcollectionName%7D%22%7D%7D&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22qdrantUrl%22%2C%22description%22%3A%22Qdrant+URL%22%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22qdrantApiKey%22%2C%22description%22%3A%22Qdrant+API+Key%22%2C%22password%22%3Atrue%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22collectionName%22%2C%22description%22%3A%22Collection+Name%22%7D%5D&quality=insiders)
 
-[![Install with Docker in VS Code](https://img.shields.io/badge/VS_Code-Docker-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=qdrant&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22-p%22%2C%228000%3A8000%22%2C%22-i%22%2C%22--rm%22%2C%22-e%22%2C%22QDRANT_URL%22%2C%22-e%22%2C%22QDRANT_API_KEY%22%2C%22-e%22%2C%22COLLECTION_NAME%22%2C%22mcp-server-qdrant%22%5D%2C%22env%22%3A%7B%22QDRANT_URL%22%3A%22%24%7Binput%3AqdrantUrl%7D%22%2C%22QDRANT_API_KEY%22%3A%22%24%7Binput%3AqdrantApiKey%7D%22%2C%22COLLECTION_NAME%22%3A%22%24%7Binput%3AcollectionName%7D%22%7D%7D&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22qdrantUrl%22%2C%22description%22%3A%22Qdrant+URL%22%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22qdrantApiKey%22%2C%22description%22%3A%22Qdrant+API+Key%22%2C%22password%22%3Atrue%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22collectionName%22%2C%22description%22%3A%22Collection+Name%22%7D%5D) [![Install with Docker in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Docker-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=qdrant&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22-p%22%2C%228000%3A8000%22%2C%22-i%22%2C%22--rm%22%2C%22-e%22%2C%22QDRANT_URL%22%2C%22-e%22%2C%22QDRANT_API_KEY%22%2C%22-e%22%2C%22COLLECTION_NAME%22%2C%22mcp-server-qdrant%22%5D%2C%22env%22%3A%7B%22QDRANT_URL%22%3A%22%24%7Binput%3AqdrantUrl%7D%22%2C%22QDRANT_API_KEY%22%3A%22%24%7Binput%3AqdrantApiKey%7D%22%2C%22COLLECTION_NAME%22%3A%22%24%7Binput%3AcollectionName%7D%22%7D%7D&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22qdrantUrl%22%2C%22description%22%3A%22Qdrant+URL%22%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22qdrantApiKey%22%2C%22description%22%3A%22Qdrant+API+Key%22%2C%22password%22%3Atrue%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22collectionName%22%2C%22description%22%3A%22Collection+Name%22%7D%5D&quality=insiders)
+[![Install with Docker in VS Code](https://img.shields.io/badge/VS_Code-Docker-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=qdrant&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22-i%22%2C%22--rm%22%2C%22-e%22%2C%22QDRANT_URL%22%2C%22-e%22%2C%22QDRANT_API_KEY%22%2C%22-e%22%2C%22COLLECTION_NAME%22%2C%22ghcr.io%2Fsinonjzh%2Fmcp-server-qdrant%3A0.9.0%22%2C%22mcp-server-qdrant%22%2C%22--transport%22%2C%22stdio%22%5D%2C%22env%22%3A%7B%22QDRANT_URL%22%3A%22%24%7Binput%3AqdrantUrl%7D%22%2C%22QDRANT_API_KEY%22%3A%22%24%7Binput%3AqdrantApiKey%7D%22%2C%22COLLECTION_NAME%22%3A%22%24%7Binput%3AcollectionName%7D%22%7D%7D&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22qdrantUrl%22%2C%22description%22%3A%22Qdrant+URL%22%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22qdrantApiKey%22%2C%22description%22%3A%22Qdrant+API+Key%22%2C%22password%22%3Atrue%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22collectionName%22%2C%22description%22%3A%22Collection+Name%22%7D%5D) [![Install with Docker in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Docker-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=qdrant&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22-i%22%2C%22--rm%22%2C%22-e%22%2C%22QDRANT_URL%22%2C%22-e%22%2C%22QDRANT_API_KEY%22%2C%22-e%22%2C%22COLLECTION_NAME%22%2C%22ghcr.io%2Fsinonjzh%2Fmcp-server-qdrant%3A0.9.0%22%2C%22mcp-server-qdrant%22%2C%22--transport%22%2C%22stdio%22%5D%2C%22env%22%3A%7B%22QDRANT_URL%22%3A%22%24%7Binput%3AqdrantUrl%7D%22%2C%22QDRANT_API_KEY%22%3A%22%24%7Binput%3AqdrantApiKey%7D%22%2C%22COLLECTION_NAME%22%3A%22%24%7Binput%3AcollectionName%7D%22%7D%7D&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22qdrantUrl%22%2C%22description%22%3A%22Qdrant+URL%22%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22qdrantApiKey%22%2C%22description%22%3A%22Qdrant+API+Key%22%2C%22password%22%3Atrue%7D%2C%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22collectionName%22%2C%22description%22%3A%22Collection+Name%22%7D%5D&quality=insiders)
 
 #### 手动安装
 
@@ -379,13 +384,14 @@ COLLECTION_NAME=mcp-dev fastmcp dev src/mcp_server_qdrant/server.py
         "command": "docker",
         "args": [
           "run",
-          "-p", "8000:8000",
           "-i",
           "--rm",
           "-e", "QDRANT_URL",
           "-e", "QDRANT_API_KEY",
           "-e", "COLLECTION_NAME",
-          "mcp-server-qdrant"
+          "ghcr.io/sinonjzh/mcp-server-qdrant:0.9.0",
+          "mcp-server-qdrant",
+          "--transport", "stdio"
         ],
         "env": {
           "QDRANT_URL": "${input:qdrantUrl}",
@@ -397,6 +403,12 @@ COLLECTION_NAME=mcp-dev fastmcp dev src/mcp_server_qdrant/server.py
   }
 }
 ```
+
+> [!NOTE]
+> 镜像默认以 streamable-http 传输启动，而 VS Code 通过 stdio 与 MCP 服务器通信。
+> `docker run` 中跟在镜像名之后的参数会整体替换镜像的 `CMD`，因此配置在镜像名后写出了完整命令
+> `mcp-server-qdrant --transport stdio` 来切换传输方式。镜像标签请固定为实际发布的版本
+> （如 `0.9` / `0.9.0`，见[使用 Docker](#使用-docker)）。
 
 或者，也可以在工作区中创建 `.vscode/mcp.json` 文件，内容如下：
 
@@ -461,13 +473,14 @@ COLLECTION_NAME=mcp-dev fastmcp dev src/mcp_server_qdrant/server.py
       "command": "docker",
       "args": [
         "run",
-        "-p", "8000:8000",
         "-i",
         "--rm",
         "-e", "QDRANT_URL",
         "-e", "QDRANT_API_KEY",
         "-e", "COLLECTION_NAME",
-        "mcp-server-qdrant"
+        "ghcr.io/sinonjzh/mcp-server-qdrant:0.9.0",
+        "mcp-server-qdrant",
+        "--transport", "stdio"
       ],
       "env": {
         "QDRANT_URL": "${input:qdrantUrl}",
