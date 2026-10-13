@@ -4,7 +4,7 @@
     "qdrant": {
       "type": "stdio",
       "command": "uvx",
-      "args": ["mcp-server-qdrant"],
+      "args": ["--from", "git+https://github.com/SinonJZH/mcp-server-qdrant", "mcp-server-qdrant"],
       "env": {
         "QDRANT_URL": "${QDRANT_URL}",
         "QDRANT_API_KEY": "${QDRANT_API_KEY}",
