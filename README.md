@@ -479,6 +479,38 @@ COLLECTION_NAME=mcp-dev fastmcp dev src/mcp_server_qdrant/server.py
 }
 ```
 
+## 客户端插件包
+
+仓库内置了两个目录，把本服务器打包成特定客户端的插件，安装后无需手写 JSON 配置。
+
+### Kiro Power（`kiro-power/`）
+
+[Kiro](https://kiro.dev/) 是 AWS 推出的 AI IDE，Power 是它的插件机制（遵循开放的
+[Agent Plugins 规范](https://agent-plugins.org/)：`plugin.json` 清单 + 可选 skills +
+可选 `mcp.json`）。`kiro-power/` 目录把本服务器打包为名为 `qdrant` 的 Power：
+
+- `mcp.json` — 用 uvx 从本 GitHub 仓库启动服务器（stdio），需要
+  `QDRANT_URL` / `QDRANT_API_KEY` / `COLLECTION_NAME` / `EMBEDDING_MODEL`
+  四个环境变量；
+- `skills/setup/` — 安装后的排障引导 skill，覆盖 uvx 不可达、环境变量缺失或未在
+  Kiro 中批准、`Failed to connect` 等常见问题。
+
+从 Kiro Powers 市场或 GitHub 仓库一键安装即可，详见
+[Kiro Powers 文档](https://kiro.dev/docs/powers/)。
+
+### DSH 插件（`dsh-plugin/`）
+
+[DSH](https://github.com/deepseek-ai/deepseek-harness)（DeepSeek Harness）用户可以使用
+`dsh-plugin/`：一份 `cordis.patch.yml` 向 profile 插入一行
+`@deepseek-ai/dsh-mcp-client`（stdio + uvx）。零配置即可连本地 Qdrant
+（默认 `http://localhost:6333`、集合 `memories`）；连远端实例时通过
+`QDRANT_URL` / `QDRANT_API_KEY` 环境变量覆盖。激活后工具名为
+`mcp__qdrant__qdrant-store` / `qdrant-find` / `qdrant-update` / `qdrant-delete`。
+
+安装：在 DSH 插件页填入 `dsh-plugin/` 的绝对路径，或执行
+`dsh plugin --profile <profile> add /path/to/mcp-server-qdrant/dsh-plugin`。
+更多细节见 [`dsh-plugin/README.md`](dsh-plugin/README.md)。
+
 ## 参与贡献
 
 如果你对如何改进 mcp-server-qdrant 有建议，或者想报告 bug，欢迎提交 issue！

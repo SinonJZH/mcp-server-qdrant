@@ -1,0 +1,34 @@
+# @sinonjzh/mcp-server-qdrant-dsh — 配置专用 DSH 插件
+#
+# 以 stdio 方式把本仓库的 mcp-server-qdrant（Qdrant 语义记忆 MCP 服务器，
+# 含 qdrant-store / qdrant-find / qdrant-update / qdrant-delete 四个工具）
+# 挂进 DSH profile。本文件不含任何密钥：env 各字段都是 `!!js` 表达式，DSH
+# 在激活该行的那一刻才求值——优先读 DSH 进程的环境变量，读不到时回退到
+# 各自的默认值。
+#
+# * 工具名由 serverName 决定，形如 mcp__qdrant__qdrant-store；
+#   改 serverName 会改变工具名以及权限规则/历史里的引用，改前想清楚。
+# * 首次激活时 uvx 要从 GitHub 克隆并构建本项目，耗时可能较长。mcp-client
+#   默认 failOnStartupError=false 且按退避自动重连，构建慢只会延迟工具出现，
+#   不会拖垮 profile 组合。想预热缓存可先在终端手动跑一次：
+#   uvx --from git+https://github.com/SinonJZH/mcp-server-qdrant mcp-server-qdrant --help
+# * 若重试预算（默认连续 10 次失败）在构建完成前耗尽，重载配置或新开会话
+#   即可，此时 uvx 已有本地缓存，第二次连接很快。
+
+- insert:
+    - id: mcp-qdrant
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: qdrant
+        transport: stdio
+        command: uvx
+        args: [--from, 'git+https://github.com/SinonJZH/mcp-server-qdrant', mcp-server-qdrant]
+        env:
+          # 想连远端 Qdrant（NAS / Qdrant Cloud）时，启动 DSH 前
+          # export QDRANT_URL / QDRANT_API_KEY 即可，无需改本文件
+          QDRANT_URL: !!js |-
+            process.env.QDRANT_URL || 'http://localhost:6333'
+          QDRANT_API_KEY: !!js |-
+            process.env.QDRANT_API_KEY || ''
+          COLLECTION_NAME: !!js |-
+            process.env.COLLECTION_NAME || 'memories'

@@ -485,6 +485,40 @@ For workspace configuration with Docker, use this in `.vscode/mcp.json`:
 }
 ```
 
+## Client plugin bundles
+
+The repository ships two directories that package this server as a plugin for specific
+clients, so no hand-written JSON configuration is needed.
+
+### Kiro Power (`kiro-power/`)
+
+[Kiro](https://kiro.dev/) is AWS's AI IDE; Powers are its plugin mechanism (following the
+open [Agent Plugins specification](https://agent-plugins.org/): a `plugin.json` manifest,
+optional skills, and an optional `mcp.json`). The `kiro-power/` directory packages this
+server as a Power named `qdrant`:
+
+- `mcp.json` — starts the server via uvx from this GitHub repository (stdio); it expects
+  the `QDRANT_URL` / `QDRANT_API_KEY` / `COLLECTION_NAME` / `EMBEDDING_MODEL`
+  environment variables;
+- `skills/setup/` — a post-install troubleshooting skill covering uvx not being reachable,
+  missing or unapproved environment variables, `Failed to connect`, and similar issues.
+
+Install it with one click from the Kiro Powers marketplace or from a GitHub repository;
+see the [Kiro Powers docs](https://kiro.dev/docs/powers/).
+
+### DSH plugin (`dsh-plugin/`)
+
+[DSH](https://github.com/deepseek-ai/deepseek-harness) (DeepSeek Harness) users can use
+`dsh-plugin/`: a single `cordis.patch.yml` that inserts one `@deepseek-ai/dsh-mcp-client`
+line (stdio + uvx) into a profile. It works out of the box against a local Qdrant
+(`http://localhost:6333`, collection `memories`); point it at a remote instance via the
+`QDRANT_URL` / `QDRANT_API_KEY` environment variables. After activation the tools are
+named `mcp__qdrant__qdrant-store` / `qdrant-find` / `qdrant-update` / `qdrant-delete`.
+
+Install by entering the absolute path of `dsh-plugin/` in the DSH plugin page, or run
+`dsh plugin --profile <profile> add /path/to/mcp-server-qdrant/dsh-plugin`. See
+[`dsh-plugin/README.md`](dsh-plugin/README.md) for details.
+
 ## Contributing
 
 If you have suggestions for how mcp-server-qdrant could be improved, or want to report a bug, open an issue!

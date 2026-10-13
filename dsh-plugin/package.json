@@ -1,0 +1,12 @@
+{
+  "name": "@sinonjzh/mcp-server-qdrant-dsh",
+  "version": "0.9.0",
+  "private": true,
+  "description": "DSH 插件：把 mcp-server-qdrant（Qdrant 语义记忆 MCP 服务器）以 stdio 方式挂进 DSH profile",
+  "type": "module",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}
