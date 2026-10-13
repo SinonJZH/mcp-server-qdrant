@@ -139,24 +139,26 @@ uvx mcp-server-qdrant --transport sse
 
 ### Using Docker
 
-A Dockerfile is available for building and running the MCP server:
+Images are built and published to `ghcr.io` by GitHub Actions (`.github/workflows/docker-publish.yaml`):
+pushes to `master` publish the rolling `master` and `sha-*` tags, `v*` version tags publish `X.Y.Z`
+and `X.Y` tags. There is no `latest` tag — deployments should pin an explicit version. The server
+runs with the streamable-http transport by default:
 
 ```bash
-# Build the container
-docker build -t mcp-server-qdrant .
-
-# Run the container
-docker run -p 8000:8000 \
-  -e FASTMCP_SERVER_HOST="0.0.0.0" \
+# Run the published image
+docker run -d -p 8000:8000 \
   -e QDRANT_URL="http://your-qdrant-server:6333" \
-  -e QDRANT_API_KEY="your-api-key" \
-  -e COLLECTION_NAME="your-collection" \
-  mcp-server-qdrant
+  -e EMBEDDING_MODEL="jinaai/jina-embeddings-v2-base-zh" \
+  ghcr.io/sinonjzh/mcp-server-qdrant:0.9.0
+
+# Or build it locally from source
+docker build -t mcp-server-qdrant .
 ```
 
 > [!TIP]
-> Please note that we set `FASTMCP_SERVER_HOST="0.0.0.0"` to make the server listen on all network interfaces. This is
-> necessary when running the server in a Docker container.
+> The image already sets `FASTMCP_SERVER_HOST=0.0.0.0` and `FASTMCP_SERVER_PORT=8000`. The embedding
+> model is not baked into the image: point `FASTEMBED_CACHE_PATH` to a mounted volume that holds (or
+> will hold) the model. With `HF_HUB_OFFLINE=1`, the cache must already be populated.
 
 ### Installing via Smithery
 
